@@ -48,7 +48,7 @@ bot.onText(/\/start/, async (msg: Message) => {
   const username = msg.from?.username || msg.from?.first_name || 'Пользователь';
   const telegramId = msg.from?.id;
   
-  if (!telegramId) {
+  if (!telegramId || typeof telegramId !== 'number') {
     bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
     return;
   }
@@ -56,10 +56,10 @@ bot.onText(/\/start/, async (msg: Message) => {
   try {
     // Создаем или обновляем пользователя
     await User.findOneAndUpdate(
-      { telegramId: Number(telegramId) },
+      { telegramId },
       { 
-        telegramId: Number(telegramId),
-        username: username,
+        telegramId,
+        username,
         stars: 0,
         blackMark: false
       },
@@ -83,9 +83,15 @@ bot.onText(/\/start/, async (msg: Message) => {
 // Проверка баланса
 bot.onText(/\/balance/, async (msg: Message) => {
   const chatId = msg.chat.id;
+  const telegramId = msg.from?.id;
+  
+  if (!telegramId || typeof telegramId !== 'number') {
+    bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
+    return;
+  }
   
   try {
-    const user = await User.findOne({ telegramId: Number(msg.from?.id) });
+    const user = await User.findOne({ telegramId });
     if (!user) {
       bot.sendMessage(chatId, 'Пожалуйста, сначала используйте команду /start');
       return;
@@ -104,9 +110,15 @@ bot.onText(/\/balance/, async (msg: Message) => {
 // Отправка чёрной метки
 bot.onText(/\/mark/, async (msg: Message) => {
   const chatId = msg.chat.id;
+  const telegramId = msg.from?.id;
+  
+  if (!telegramId || typeof telegramId !== 'number') {
+    bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
+    return;
+  }
   
   try {
-    const user = await User.findOne({ telegramId: Number(msg.from?.id) });
+    const user = await User.findOne({ telegramId });
     if (!user) {
       bot.sendMessage(chatId, 'Пожалуйста, сначала используйте команду /start');
       return;
@@ -128,9 +140,15 @@ bot.onText(/\/mark/, async (msg: Message) => {
 // Снятие чёрной метки
 bot.onText(/\/remove/, async (msg: Message) => {
   const chatId = msg.chat.id;
+  const telegramId = msg.from?.id;
+  
+  if (!telegramId || typeof telegramId !== 'number') {
+    bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
+    return;
+  }
   
   try {
-    const user = await User.findOne({ telegramId: Number(msg.from?.id) });
+    const user = await User.findOne({ telegramId });
     if (!user) {
       bot.sendMessage(chatId, 'Пожалуйста, сначала используйте команду /start');
       return;
