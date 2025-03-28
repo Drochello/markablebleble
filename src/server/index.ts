@@ -193,11 +193,16 @@ app.get('/api/health', (req, res) => {
 app.get('/api/balance', async (req, res) => {
   try {
     const telegramId = req.query.telegramId;
-    if (!telegramId) {
-      return res.status(400).json({ error: 'Telegram ID is required' });
+    if (!telegramId || typeof telegramId !== 'string') {
+      return res.status(400).json({ error: 'Telegram ID is required and must be a string' });
     }
 
-    const user = await User.findOne({ telegramId: Number(telegramId) });
+    const numericTelegramId = Number(telegramId);
+    if (isNaN(numericTelegramId)) {
+      return res.status(400).json({ error: 'Invalid Telegram ID format' });
+    }
+
+    const user = await User.findOne({ telegramId: numericTelegramId });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
