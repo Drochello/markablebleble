@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import TelegramBot from 'node-telegram-bot-api';
+import TelegramBot, { Message } from 'node-telegram-bot-api';
 import User from './models/User';
 import path from 'path';
 
@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, '../../public')));
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/black-mark-app')
   .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+  .catch((err: Error) => console.error('MongoDB connection error:', err));
 
 // Telegram Bot setup
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN || '', { 
@@ -28,16 +28,16 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN || '', {
 });
 
 // Обработка ошибок бота
-bot.on('polling_error', (error) => {
+bot.on('polling_error', (error: Error) => {
   console.error('Telegram Bot polling error:', error);
 });
 
-bot.on('error', (error) => {
+bot.on('error', (error: Error) => {
   console.error('Telegram Bot error:', error);
 });
 
 // Базовые команды бота
-bot.onText(/\/start/, async (msg) => {
+bot.onText(/\/start/, async (msg: Message) => {
   const chatId = msg.chat.id;
   const username = msg.from?.username || msg.from?.first_name || 'Пользователь';
   
@@ -69,7 +69,7 @@ bot.onText(/\/start/, async (msg) => {
 });
 
 // Проверка баланса
-bot.onText(/\/balance/, async (msg) => {
+bot.onText(/\/balance/, async (msg: Message) => {
   const chatId = msg.chat.id;
   
   try {
@@ -90,7 +90,7 @@ bot.onText(/\/balance/, async (msg) => {
 });
 
 // Отправка чёрной метки
-bot.onText(/\/mark/, async (msg) => {
+bot.onText(/\/mark/, async (msg: Message) => {
   const chatId = msg.chat.id;
   
   try {
@@ -114,7 +114,7 @@ bot.onText(/\/mark/, async (msg) => {
 });
 
 // Снятие чёрной метки
-bot.onText(/\/remove/, async (msg) => {
+bot.onText(/\/remove/, async (msg: Message) => {
   const chatId = msg.chat.id;
   
   try {
