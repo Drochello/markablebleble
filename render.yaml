@@ -6,7 +6,7 @@ services:
     startCommand: npm start
     envVars:
       - key: MONGODB_URI
-        sync: false
+        value: mongodb+srv://blackmark:blackmark123@cluster0.mongodb.net/black-mark-app?retryWrites=true&w=majority
       - key: TELEGRAM_BOT_TOKEN
         value: 7764525765:AAGUZJcGHmjum7YRTJ9RjZonEomACkTlpoU
       - key: PORT
