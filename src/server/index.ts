@@ -46,13 +46,19 @@ bot.on('error', (error: Error) => {
 bot.onText(/\/start/, async (msg: Message) => {
   const chatId = msg.chat.id;
   const username = msg.from?.username || msg.from?.first_name || 'Пользователь';
+  const telegramId = msg.from?.id;
+  
+  if (!telegramId) {
+    bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
+    return;
+  }
   
   try {
     // Создаем или обновляем пользователя
     await User.findOneAndUpdate(
-      { telegramId: msg.from?.id },
+      { telegramId: Number(telegramId) },
       { 
-        telegramId: msg.from?.id,
+        telegramId: Number(telegramId),
         username: username,
         stars: 0,
         blackMark: false
@@ -79,7 +85,7 @@ bot.onText(/\/balance/, async (msg: Message) => {
   const chatId = msg.chat.id;
   
   try {
-    const user = await User.findOne({ telegramId: msg.from?.id });
+    const user = await User.findOne({ telegramId: Number(msg.from?.id) });
     if (!user) {
       bot.sendMessage(chatId, 'Пожалуйста, сначала используйте команду /start');
       return;
@@ -100,7 +106,7 @@ bot.onText(/\/mark/, async (msg: Message) => {
   const chatId = msg.chat.id;
   
   try {
-    const user = await User.findOne({ telegramId: msg.from?.id });
+    const user = await User.findOne({ telegramId: Number(msg.from?.id) });
     if (!user) {
       bot.sendMessage(chatId, 'Пожалуйста, сначала используйте команду /start');
       return;
@@ -124,7 +130,7 @@ bot.onText(/\/remove/, async (msg: Message) => {
   const chatId = msg.chat.id;
   
   try {
-    const user = await User.findOne({ telegramId: msg.from?.id });
+    const user = await User.findOne({ telegramId: Number(msg.from?.id) });
     if (!user) {
       bot.sendMessage(chatId, 'Пожалуйста, сначала используйте команду /start');
       return;
