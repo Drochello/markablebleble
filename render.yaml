@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: black-mark-app
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: PORT
+        value: 10000 

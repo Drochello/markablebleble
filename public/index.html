@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система Чёрных Меток</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .button {
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Система Чёрных Меток</h1>
+        </div>
+        <div class="card">
+            <h2>Ваш баланс</h2>
+            <p id="balance">Загрузка...</p>
+        </div>
+        <div class="card">
+            <h2>Действия</h2>
+            <button class="button" id="markButton">Отправить чёрную метку</button>
+            <button class="button" id="removeButton">Снять чёрную метку (50 ⭐️)</button>
+        </div>
+    </div>
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            // Здесь будет код инициализации
+            updateBalance();
+        });
+
+        // Обновление баланса
+        async function updateBalance() {
+            try {
+                const response = await fetch('/api/balance');
+                const data = await response.json();
+                document.getElementById('balance').textContent = `${data.stars} ⭐️`;
+            } catch (error) {
+                console.error('Error fetching balance:', error);
+                document.getElementById('balance').textContent = 'Ошибка загрузки';
+            }
+        }
+
+        // Обработчики кнопок
+        document.getElementById('markButton').addEventListener('click', function() {
+            // Здесь будет код отправки метки
+            alert('Функция в разработке');
+        });
+
+        document.getElementById('removeButton').addEventListener('click', function() {
+            // Здесь будет код снятия метки
+            alert('Функция в разработке');
+        });
+    </script>
+</body>
+</html> 
