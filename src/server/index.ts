@@ -8,6 +8,23 @@ import path from 'path';
 
 dotenv.config();
 
+interface TelegramUser {
+  id: number;
+  first_name: string;
+  username?: string;
+  is_bot: boolean;
+  language_code?: string;
+  is_premium?: boolean;
+  added_to_attachment_menu?: boolean;
+  can_join_groups?: boolean;
+  can_read_all_group_messages?: boolean;
+  supports_inline_queries?: boolean;
+}
+
+interface TelegramMessage extends Message {
+  from?: TelegramUser;
+}
+
 const app = express();
 const port = process.env.PORT || 3000;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
@@ -43,10 +60,10 @@ bot.on('error', (error: Error) => {
 });
 
 // Базовые команды бота
-bot.onText(/\/start/, async (msg: Message) => {
+bot.onText(/\/start/, async (msg: TelegramMessage) => {
   const chatId = msg.chat.id;
   const username = msg.from?.username || msg.from?.first_name || 'Пользователь';
-  const telegramId = msg.from?.id as number | undefined;
+  const telegramId = msg.from?.id;
   
   if (!telegramId) {
     bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
@@ -81,9 +98,9 @@ bot.onText(/\/start/, async (msg: Message) => {
 });
 
 // Проверка баланса
-bot.onText(/\/balance/, async (msg: Message) => {
+bot.onText(/\/balance/, async (msg: TelegramMessage) => {
   const chatId = msg.chat.id;
-  const telegramId = msg.from?.id as number | undefined;
+  const telegramId = msg.from?.id;
   
   if (!telegramId) {
     bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
@@ -108,9 +125,9 @@ bot.onText(/\/balance/, async (msg: Message) => {
 });
 
 // Отправка чёрной метки
-bot.onText(/\/mark/, async (msg: Message) => {
+bot.onText(/\/mark/, async (msg: TelegramMessage) => {
   const chatId = msg.chat.id;
-  const telegramId = msg.from?.id as number | undefined;
+  const telegramId = msg.from?.id;
   
   if (!telegramId) {
     bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
@@ -138,9 +155,9 @@ bot.onText(/\/mark/, async (msg: Message) => {
 });
 
 // Снятие чёрной метки
-bot.onText(/\/remove/, async (msg: Message) => {
+bot.onText(/\/remove/, async (msg: TelegramMessage) => {
   const chatId = msg.chat.id;
-  const telegramId = msg.from?.id as number | undefined;
+  const telegramId = msg.from?.id;
   
   if (!telegramId) {
     bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
