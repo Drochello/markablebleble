@@ -46,9 +46,9 @@ bot.on('error', (error: Error) => {
 bot.onText(/\/start/, async (msg: Message) => {
   const chatId = msg.chat.id;
   const username = msg.from?.username || msg.from?.first_name || 'Пользователь';
-  const telegramId = msg.from?.id;
+  const telegramId = msg.from?.id as number | undefined;
   
-  if (!telegramId || typeof telegramId !== 'number') {
+  if (!telegramId) {
     bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
     return;
   }
@@ -83,9 +83,9 @@ bot.onText(/\/start/, async (msg: Message) => {
 // Проверка баланса
 bot.onText(/\/balance/, async (msg: Message) => {
   const chatId = msg.chat.id;
-  const telegramId = msg.from?.id;
+  const telegramId = msg.from?.id as number | undefined;
   
-  if (!telegramId || typeof telegramId !== 'number') {
+  if (!telegramId) {
     bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
     return;
   }
@@ -110,9 +110,9 @@ bot.onText(/\/balance/, async (msg: Message) => {
 // Отправка чёрной метки
 bot.onText(/\/mark/, async (msg: Message) => {
   const chatId = msg.chat.id;
-  const telegramId = msg.from?.id;
+  const telegramId = msg.from?.id as number | undefined;
   
-  if (!telegramId || typeof telegramId !== 'number') {
+  if (!telegramId) {
     bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
     return;
   }
@@ -140,9 +140,9 @@ bot.onText(/\/mark/, async (msg: Message) => {
 // Снятие чёрной метки
 bot.onText(/\/remove/, async (msg: Message) => {
   const chatId = msg.chat.id;
-  const telegramId = msg.from?.id;
+  const telegramId = msg.from?.id as number | undefined;
   
-  if (!telegramId || typeof telegramId !== 'number') {
+  if (!telegramId) {
     bot.sendMessage(chatId, 'Ошибка: не удалось определить ID пользователя');
     return;
   }
