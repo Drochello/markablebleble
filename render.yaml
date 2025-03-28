@@ -8,6 +8,6 @@ services:
       - key: MONGODB_URI
         sync: false
       - key: TELEGRAM_BOT_TOKEN
-        sync: false
+        value: 7764525765:AAGUZJcGHmjum7YRTJ9RjZonEomACkTlpoU
       - key: PORT
         value: 10000 
