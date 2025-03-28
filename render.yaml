@@ -10,4 +10,6 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         value: 7764525765:AAGUZJcGHmjum7YRTJ9RjZonEomACkTlpoU
       - key: PORT
-        value: 10000 
+        value: 10000
+      - key: WEBHOOK_URL
+        sync: false 
