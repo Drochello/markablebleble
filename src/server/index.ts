@@ -21,139 +21,173 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/black-mar
   .then(() => console.log('Connected to MongoDB'))
   .catch((err: Error) => console.error('MongoDB connection error:', err));
 
-// Telegram Bot setup
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN || '', { 
-  polling: true,
-  filepath: false
-});
+// Telegram Bot setup with retry mechanism
+let bot: TelegramBot;
+let isBotRunning = false;
 
-// Обработка ошибок бота
-bot.on('polling_error', (error: Error) => {
-  console.error('Telegram Bot polling error:', error);
-});
+function initializeBot() {
+  if (isBotRunning) {
+    console.log('Bot is already running');
+    return;
+  }
 
-bot.on('error', (error: Error) => {
-  console.error('Telegram Bot error:', error);
-});
-
-// Базовые команды бота
-bot.onText(/\/start/, async (msg: Message) => {
-  const chatId = msg.chat.id;
-  const username = msg.from?.username || msg.from?.first_name || 'Пользователь';
-  
   try {
-    // Создаем или обновляем пользователя
-    await User.findOneAndUpdate(
-      { telegramId: msg.from?.id },
-      { 
-        telegramId: msg.from?.id,
-        username: username,
-        stars: 0,
-        blackMark: false
+    bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN || '', { 
+      polling: {
+        interval: 300,
+        autoStart: true,
+        params: {
+          timeout: 10
+        }
       },
-      { upsert: true }
-    );
+      filepath: false
+    });
 
-    const welcomeMessage = `Добро пожаловать в систему чёрных меток, ${username}! 🎯\n\n` +
-      'Доступные команды:\n' +
-      '/balance - Проверить баланс звёздочек\n' +
-      '/mark - Отправить чёрную метку\n' +
-      '/remove - Снять чёрную метку (50 звёздочек)\n' +
-      '/help - Показать это сообщение';
-    
-    bot.sendMessage(chatId, welcomeMessage);
-  } catch (error) {
-    console.error('Error in /start command:', error);
-    bot.sendMessage(chatId, 'Произошла ошибка при регистрации. Попробуйте позже.');
-  }
-});
+    isBotRunning = true;
 
-// Проверка баланса
-bot.onText(/\/balance/, async (msg: Message) => {
-  const chatId = msg.chat.id;
-  
-  try {
-    const user = await User.findOne({ telegramId: msg.from?.id });
-    if (!user) {
-      bot.sendMessage(chatId, 'Пожалуйста, сначала используйте команду /start');
-      return;
-    }
-
-    const message = `Ваш баланс: ${user.stars} ⭐️\n` +
-      `Статус чёрной метки: ${user.blackMark ? 'Активна' : 'Нет'}`;
-    
-    bot.sendMessage(chatId, message);
-  } catch (error) {
-    console.error('Error in /balance command:', error);
-    bot.sendMessage(chatId, 'Произошла ошибка при проверке баланса. Попробуйте позже.');
-  }
-});
-
-// Отправка чёрной метки
-bot.onText(/\/mark/, async (msg: Message) => {
-  const chatId = msg.chat.id;
-  
-  try {
-    const user = await User.findOne({ telegramId: msg.from?.id });
-    if (!user) {
-      bot.sendMessage(chatId, 'Пожалуйста, сначала используйте команду /start');
-      return;
-    }
-
-    if (user.blackMark) {
-      bot.sendMessage(chatId, 'Вы не можете отправлять чёрные метки, пока у вас есть активная метка!');
-      return;
-    }
-
-    // Здесь будет логика выбора пользователя для отправки метки
-    bot.sendMessage(chatId, 'Выберите пользователя из списка контактов для отправки чёрной метки:');
-  } catch (error) {
-    console.error('Error in /mark command:', error);
-    bot.sendMessage(chatId, 'Произошла ошибка при отправке метки. Попробуйте позже.');
-  }
-});
-
-// Снятие чёрной метки
-bot.onText(/\/remove/, async (msg: Message) => {
-  const chatId = msg.chat.id;
-  
-  try {
-    const user = await User.findOne({ telegramId: msg.from?.id });
-    if (!user) {
-      bot.sendMessage(chatId, 'Пожалуйста, сначала используйте команду /start');
-      return;
-    }
-
-    if (!user.blackMark) {
-      bot.sendMessage(chatId, 'У вас нет активной чёрной метки!');
-      return;
-    }
-
-    if (user.stars < 50) {
-      bot.sendMessage(chatId, 'Недостаточно звёздочек! Нужно 50 ⭐️');
-      return;
-    }
-
-    // Снимаем метку и списываем звёздочки
-    user.blackMark = false;
-    user.stars -= 50;
-    await user.save();
-
-    // Начисляем звёздочки отправителю метки
-    if (user.blackMarkFrom) {
-      const markSender = await User.findOne({ telegramId: user.blackMarkFrom });
-      if (markSender) {
-        markSender.stars += 5;
-        await markSender.save();
+    // Обработка ошибок бота
+    bot.on('polling_error', (error: Error) => {
+      console.error('Telegram Bot polling error:', error);
+      if (error.message.includes('terminated by other getUpdates request')) {
+        console.log('Attempting to restart bot...');
+        isBotRunning = false;
+        setTimeout(initializeBot, 5000); // Перезапуск через 5 секунд
       }
-    }
+    });
 
-    bot.sendMessage(chatId, 'Чёрная метка успешно снята! -50 ⭐️');
+    bot.on('error', (error: Error) => {
+      console.error('Telegram Bot error:', error);
+    });
+
+    // Базовые команды бота
+    bot.onText(/\/start/, async (msg: Message) => {
+      const chatId = msg.chat.id;
+      const username = msg.from?.username || msg.from?.first_name || 'Пользователь';
+      
+      try {
+        // Создаем или обновляем пользователя
+        await User.findOneAndUpdate(
+          { telegramId: msg.from?.id },
+          { 
+            telegramId: msg.from?.id,
+            username: username,
+            stars: 0,
+            blackMark: false
+          },
+          { upsert: true }
+        );
+
+        const welcomeMessage = `Добро пожаловать в систему чёрных меток, ${username}! 🎯\n\n` +
+          'Доступные команды:\n' +
+          '/balance - Проверить баланс звёздочек\n' +
+          '/mark - Отправить чёрную метку\n' +
+          '/remove - Снять чёрную метку (50 звёздочек)\n' +
+          '/help - Показать это сообщение';
+        
+        bot.sendMessage(chatId, welcomeMessage);
+      } catch (error) {
+        console.error('Error in /start command:', error);
+        bot.sendMessage(chatId, 'Произошла ошибка при регистрации. Попробуйте позже.');
+      }
+    });
+
+    // Проверка баланса
+    bot.onText(/\/balance/, async (msg: Message) => {
+      const chatId = msg.chat.id;
+      
+      try {
+        const user = await User.findOne({ telegramId: msg.from?.id });
+        if (!user) {
+          bot.sendMessage(chatId, 'Пожалуйста, сначала используйте команду /start');
+          return;
+        }
+
+        const message = `Ваш баланс: ${user.stars} ⭐️\n` +
+          `Статус чёрной метки: ${user.blackMark ? 'Активна' : 'Нет'}`;
+        
+        bot.sendMessage(chatId, message);
+      } catch (error) {
+        console.error('Error in /balance command:', error);
+        bot.sendMessage(chatId, 'Произошла ошибка при проверке баланса. Попробуйте позже.');
+      }
+    });
+
+    // Отправка чёрной метки
+    bot.onText(/\/mark/, async (msg: Message) => {
+      const chatId = msg.chat.id;
+      
+      try {
+        const user = await User.findOne({ telegramId: msg.from?.id });
+        if (!user) {
+          bot.sendMessage(chatId, 'Пожалуйста, сначала используйте команду /start');
+          return;
+        }
+
+        if (user.blackMark) {
+          bot.sendMessage(chatId, 'Вы не можете отправлять чёрные метки, пока у вас есть активная метка!');
+          return;
+        }
+
+        // Здесь будет логика выбора пользователя для отправки метки
+        bot.sendMessage(chatId, 'Выберите пользователя из списка контактов для отправки чёрной метки:');
+      } catch (error) {
+        console.error('Error in /mark command:', error);
+        bot.sendMessage(chatId, 'Произошла ошибка при отправке метки. Попробуйте позже.');
+      }
+    });
+
+    // Снятие чёрной метки
+    bot.onText(/\/remove/, async (msg: Message) => {
+      const chatId = msg.chat.id;
+      
+      try {
+        const user = await User.findOne({ telegramId: msg.from?.id });
+        if (!user) {
+          bot.sendMessage(chatId, 'Пожалуйста, сначала используйте команду /start');
+          return;
+        }
+
+        if (!user.blackMark) {
+          bot.sendMessage(chatId, 'У вас нет активной чёрной метки!');
+          return;
+        }
+
+        if (user.stars < 50) {
+          bot.sendMessage(chatId, 'Недостаточно звёздочек! Нужно 50 ⭐️');
+          return;
+        }
+
+        // Снимаем метку и списываем звёздочки
+        user.blackMark = false;
+        user.stars -= 50;
+        await user.save();
+
+        // Начисляем звёздочки отправителю метки
+        if (user.blackMarkFrom) {
+          const markSender = await User.findOne({ telegramId: user.blackMarkFrom });
+          if (markSender) {
+            markSender.stars += 5;
+            await markSender.save();
+          }
+        }
+
+        bot.sendMessage(chatId, 'Чёрная метка успешно снята! -50 ⭐️');
+      } catch (error) {
+        console.error('Error in /remove command:', error);
+        bot.sendMessage(chatId, 'Произошла ошибка при снятии метки. Попробуйте позже.');
+      }
+    });
+
+    console.log('Bot initialized successfully');
   } catch (error) {
-    console.error('Error in /remove command:', error);
-    bot.sendMessage(chatId, 'Произошла ошибка при снятии метки. Попробуйте позже.');
+    console.error('Error initializing bot:', error);
+    isBotRunning = false;
+    setTimeout(initializeBot, 5000); // Перезапуск через 5 секунд
   }
-});
+}
+
+// Инициализация бота
+initializeBot();
 
 // API Routes
 app.get('/api/health', (req, res) => {
